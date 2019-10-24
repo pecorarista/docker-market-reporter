@@ -1,28 +1,20 @@
-FROM continuumio/anaconda3:5.3.0
+FROM pecorarista/pipenv
 
 SHELL ["/bin/bash", "-c"]
 
 ENV DEBCONF_NOWARNINGS yes
 
-RUN apt-get update && apt-get install -y \
-    apache2-utils \
-    gcc \
-    g++ \
-    make \
-    nginx \
-    postgresql-client-9.6 \
-    sudo \
-    supervisor \
-    vim-tiny
+USER root
 
-ENV MARKET_REPORTER_USER "reporter"
-
-RUN useradd --create-home --skel /etc/skel \
-    --home-dir /opt/${MARKET_REPORTER_USER} \
-    --shell /bin/bash ${MARKET_REPORTER_USER}
-RUN echo $'source /opt/conda/etc/profile.d/conda.sh\n\
-conda activate base' >> /opt/${MARKET_REPORTER_USER}/.bashrc
-RUN chown -R ${MARKET_REPORTER_USER}:${MARKET_REPORTER_USER} /opt/${MARKET_REPORTER_USER}
+RUN apt-get update \
+    && sudo apt-get install -y \
+        apache2-utils \
+        nginx \
+        build-essential \
+        libpq-dev \
+        supervisor \
+    && sudo apt-get clean \
+    && sudo rm -rf /var/lib/apt/lists/*
 
 RUN echo $'server {\n\
     listen 443 ssl default_server;\n\
@@ -64,4 +56,4 @@ command=/usr/sbin/nginx -g "daemon off;"' > /etc/supervisor/conf.d/supervisord.c
 
 ENTRYPOINT /usr/bin/supervisord --nodaemon --user root --configuration /etc/supervisor/supervisord.conf
 
-WORKDIR /opt/${MARKET_REPORTER_USER}
+WORKDIR /home/circleci
